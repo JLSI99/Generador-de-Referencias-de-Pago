@@ -11,24 +11,21 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const CONCEPTOS_AUTORIZADOS = {
-  '1': { id: '01', nombre: 'Inscripción para Asistentes', monto: 250.00 },
-  '2': { id: '02', nombre: 'Inscripción para Ponentes', monto: 450.00 },
-  '3': { id: '03', nombre: 'Inscripción para Alumnos Asistentes del ITSC', monto: 500.00 }
+  '1': { id: '01', nombre: 'Inscripción para Asistentes', monto: 450.00 },
+  '2': { id: '02', nombre: 'Inscripción para Ponentes', monto: 500.00 },
+  '3': { id: '03', nombre: 'Inscripción para Alumnos Asistentes del ITSC', monto: 250.00 }
 };
 
-// Datos bancarios institucionales estáticos
 const DATOS_BANCARIOS = {
   banco: 'BBVA México, S.A.',
-  convenioCIE: '1849201', // Número de Convenio CIE de prueba
-  clabeInterbancaria: '012180001234567890',
-  titular: 'UNIVERSIDAD CONGRESO TECNOLOGICO A.C.'
+  convenioCIE: '001947427',
+  clabeInterbancaria: '012790001260459442',
+  titular: 'INSTITUTO TECNOLOGICO SUPERIOR DE COMALCALCO'
 };
 
 /**
- * Calcula el Dígito Verificador usando el algoritmo Módulo 10 de BBVA
- * Ponderación: [2, 1] de derecha a izquierda.
- * @param {string} base - Cadena de caracteres numéricos
- * @returns {string} Dígito verificador resultante (0-9)
+ * @param {string} base
+ * @returns {string}
  */
 function calcularDigitoVerificadorModulo10(base) {
   if (!/^\d+$/.test(base)) {
@@ -57,11 +54,9 @@ function calcularDigitoVerificadorModulo10(base) {
 }
 
 /**
- * Genera la referencia bancaria estructurada
- * Format: [Matrícula 8 Dig][ID Concepto 2 Dig][DV 1 Dig]
  * @param {string} matricula 
  * @param {string} conceptoId 
- * @returns {string} Referencia de 11 dígitos
+ * @returns {string}
  */
 function generarReferenciaBBVA(matricula, conceptoId) {
   const matriculaLimpia = matricula.replace(/\D/g, '').padStart(8, '0').slice(-8);
@@ -70,14 +65,10 @@ function generarReferenciaBBVA(matricula, conceptoId) {
   return `${baseCadena}${dv}`;
 }
 
-/**
- * Endpoint de Generación de Ficha PDF
- */
 app.post('/api/v1/ficha', (req, res) => {
   try {
     const { nombre, matricula, concepto_id } = req.body;
 
-    // Validaciones de Entrada
     if (!nombre || !matricula || !concepto_id) {
       return res.status(400).json({ error: 'Faltan parámetros requeridos: nombre, matricula, concepto_id' });
     }
@@ -87,10 +78,8 @@ app.post('/api/v1/ficha', (req, res) => {
       return res.status(400).json({ error: 'El concepto seleccionado no es válido.' });
     }
 
-    // Cálculo de la referencia
     const referenciaGenerada = generarReferenciaBBVA(matricula, conceptoSel.id);
 
-    // Configuración de encabezados HTTP para la descarga streaming del PDF
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Ficha_Pago_${matricula}.pdf`);
 
@@ -98,8 +87,7 @@ app.post('/api/v1/ficha', (req, res) => {
     const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
     doc.pipe(res);
 
-    // --- ENCABEZADO ---
-    doc.rect(40, 40, 532, 60).fill('#004481'); // Azul Corporativo BBVA
+    doc.rect(40, 40, 532, 60).fill('#004481');
     doc.fillColor('#FFFFFF')
        .fontSize(16)
        .text('FICHA DE PAGO BANCARIO - CONGRESO UNIVERSITARIO', 50, 52, { width: 512, align: 'center' });
@@ -118,7 +106,6 @@ app.post('/api/v1/ficha', (req, res) => {
        .text(`Concepto: ${conceptoSel.nombre}`, 40, startYAlumno + 50)
        .text(`Monto a Pagar: $${conceptoSel.monto.toFixed(2)} MXN`, 40, startYAlumno + 65);
 
-    // --- INSTRUCCIONES DE PAGO BBVA ---
     const startYBBVA = 220;
     doc.rect(40, startYBBVA, 532, 140).fillAndStroke('#F4F6F8', '#DCDCDC');
 
@@ -136,7 +123,6 @@ app.post('/api/v1/ficha', (req, res) => {
        .text(`Importe Exacto:`, 55, startYBBVA + 85)
        .font('Helvetica-Bold').text(`$${conceptoSel.monto.toFixed(2)} MXN`, 180, startYBBVA + 85);
 
-    // --- OPCIÓN SPEI ---
     const startYSPEI = 380;
     doc.rect(40, startYSPEI, 532, 110).fillAndStroke('#FFFFFF', '#DCDCDC');
 
@@ -150,7 +136,6 @@ app.post('/api/v1/ficha', (req, res) => {
        .text(`Concepto / Referencia SPEI:`, 55, startYSPEI + 65)
        .font('Helvetica-Bold').fillColor('#D32F2F').text(referenciaGenerada, 180, startYSPEI + 65);
 
-    // --- PIE DE PÁGINA / AVISOS ---
     doc.fillColor('#666666').fontSize(8)
        .text('* Esta ficha de pago tiene una vigencia de 5 días hábiles a partir de su emisión.', 40, 520)
        .text('* Es indispensable utilizar la referencia exacta mostrada en este documento para la conciliación automática de su pago.', 40, 532);
@@ -163,7 +148,6 @@ app.post('/api/v1/ficha', (req, res) => {
   }
 });
 
-// Inicialización del Servidor
 app.listen(PORT, () => {
   console.log(`[INFO] Servidor corriendo en http://localhost:${PORT}`);
 });

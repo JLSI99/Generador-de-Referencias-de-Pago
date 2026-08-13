@@ -11,9 +11,9 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const CONCEPTOS_AUTORIZADOS = {
-  '1': { id: '01', nombre: 'Inscripción para Asistentes', monto: 450.00 },
-  '2': { id: '02', nombre: 'Inscripción para Ponentes', monto: 500.00 },
-  '3': { id: '03', nombre: 'Inscripción para Alumnos Asistentes del ITSC', monto: 250.00 }
+  '1': { id: '01', nombre: 'Inscripción para Asistentes', monto: 495.00 },
+  '2': { id: '02', nombre: 'Inscripción para Ponentes', monto: 510.00 },
+  '3': { id: '03', nombre: 'Inscripción para Alumnos Asistentes del ITSC', monto: 259.00 }
 };
 
 const DATOS_BANCARIOS = {
